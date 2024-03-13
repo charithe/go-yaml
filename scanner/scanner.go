@@ -4,9 +4,8 @@ import (
 	"io"
 	"strings"
 
-	"golang.org/x/xerrors"
-
 	"github.com/goccy/go-yaml/token"
+	"golang.org/x/xerrors"
 )
 
 // IndentState state for indent
@@ -506,9 +505,13 @@ func (s *Scanner) scanLiteral(ctx *Context, c rune) {
 	if ctx.isEOS() {
 		if ctx.isLiteral {
 			ctx.addBuf(c)
+		} else if ctx.isFolded && !s.isNewLineChar(c) {
+			ctx.addBuf(c)
 		}
 		value := ctx.bufferedSrc()
-		ctx.addToken(token.String(string(value), string(ctx.obuf), s.pos()))
+		pos := s.pos()
+		pos.Column = s.docStartColumn
+		ctx.addToken(token.String(string(value), string(ctx.obuf), pos))
 		ctx.resetBuffer()
 		s.progressColumn(ctx, 1)
 	} else if s.isNewLineChar(c) {

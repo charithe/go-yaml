@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/goccy/go-yaml/errors"
 	"github.com/goccy/go-yaml/printer"
 	"github.com/goccy/go-yaml/token"
 	"golang.org/x/xerrors"
@@ -15,9 +16,7 @@ const (
 	defaultIncludeSource = true
 )
 
-var (
-	ErrDecodeRequiredPointerType = xerrors.New("required pointer type value")
-)
+var ErrDecodeRequiredPointerType = xerrors.New("required pointer type value")
 
 // Wrapf wrap error for stack trace
 func Wrapf(err error, msg string, args ...interface{}) error {
@@ -220,6 +219,17 @@ func (e *syntaxError) Error() string {
 	var buf bytes.Buffer
 	e.PrettyPrint(&Sink{&buf}, defaultColorize, defaultIncludeSource)
 	return buf.String()
+}
+
+func (e *syntaxError) As(dest any) bool {
+	if se, ok := dest.(*errors.SyntaxError); ok {
+		se.Msg = e.msg
+		se.Token = e.token
+		se.Underlying = e
+		return true
+	}
+
+	return xerrors.As(e, dest)
 }
 
 type TypeError struct {

@@ -78,8 +78,7 @@ func (p *parser) parseTag(ctx *context) (*ast.TagNode, error) {
 		err   error
 	)
 	switch token.ReservedTagKeyword(tagToken.Value) {
-	case token.MappingTag,
-		token.OrderedMapTag:
+	case token.MappingTag, token.OrderedMapTag:
 		value, err = p.parseMapping(ctx)
 	case token.IntegerTag,
 		token.FloatTag,
@@ -93,8 +92,7 @@ func (p *parser) parseTag(ctx *context) (*ast.TagNode, error) {
 		} else {
 			value = p.parseScalarValue(ctx.currentToken())
 		}
-	case token.SequenceTag,
-		token.SetTag:
+	case token.SequenceTag, token.SetTag:
 		err = errors.ErrSyntax(fmt.Sprintf("sorry, currently not supported %s tag", tagToken.Value), tagToken)
 	default:
 		// custom tag
@@ -320,6 +318,7 @@ func (p *parser) parseMappingValue(ctx *context) (ast.Node, error) {
 		comment := p.parseFootComment(ctx, mapCol)
 		node.FootComment = comment
 	}
+
 	return node, nil
 }
 
@@ -691,6 +690,11 @@ func (p *parser) parse(tokens token.Tokens, mode Mode) (*ast.File, error) {
 	ctx := newContext(tokens, mode)
 	file := &ast.File{Docs: []*ast.DocumentNode{}}
 	for ctx.next() {
+		tok := ctx.currentToken()
+		if len(file.Docs) > 0 && tok.Position.Column != 1 {
+			return nil, errors.ErrSyntax("invalid indentation", tok)
+		}
+
 		node, err := p.parseToken(ctx, ctx.currentToken())
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse")
@@ -699,6 +703,7 @@ func (p *parser) parse(tokens token.Tokens, mode Mode) (*ast.File, error) {
 		if node == nil {
 			continue
 		}
+
 		if doc, ok := node.(*ast.DocumentNode); ok {
 			file.Docs = append(file.Docs, doc)
 		} else {

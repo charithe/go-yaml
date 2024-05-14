@@ -229,7 +229,7 @@ func (e *syntaxError) As(dest any) bool {
 		return true
 	}
 
-	return xerrors.As(e, dest)
+	return false
 }
 
 type TypeError struct {
